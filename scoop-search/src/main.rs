@@ -41,6 +41,14 @@ fn untyped_example() -> Result<()> {
     Ok(())
 }
 
+fn print_if_contains_query(name: &str, bucket: &str, json: &str, query: &str) -> Result<()>{
+    let v: Value = serde_json::from_str(json)?;
+    if query != "" && v["description"].to_string().contains(query) {
+        println!("{}\t{}\t{}", name, v["version"], bucket)
+    }
+    Ok(())
+}
+
 fn main() {
     untyped_example().unwrap();
 }
