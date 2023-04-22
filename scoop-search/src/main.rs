@@ -15,7 +15,7 @@ fn main() -> Result<()> {
     let mut _source_count: u8  = 20;
     let mut _binaries_count: u8 = 25;
     let mut v: Vec<Manifest> = vec![];
-    let query = "".to_string();
+    let query = "sumo".to_string().to_lowercase();
     // let query: String = std::env::args().nth(1).unwrap();
     // let query: String = "sumo".to_string();
 
@@ -53,15 +53,20 @@ fn search_query(v: &mut Vec<Manifest>, query: &str) -> Result<()>{
     let file_name = &file_stem.expect("no file stem found").to_string();
     // println!("{}", &file_stem.expect("no file stem found").to_string());
     if query != "" {
-        // if val["bin"] {
-
-        // }
+        if file_name.to_lowercase().contains(query) || val["bin"].to_string().to_lowercase().contains(query) {
+            v.push(Manifest {
+                name: path::Path::new(&input_path).file_stem().unwrap().to_str().expect("no file stem found").to_string(), 
+                version: val["version"].to_string().replace("\"", ""), 
+                source: val["source"].to_string(), 
+                binaries: val["bin"].to_string().replace("\"", ""),
+            });
+        }
     } else {
         v.push(Manifest {
             name: path::Path::new(&input_path).file_stem().unwrap().to_str().expect("no file stem found").to_string(), 
             version: val["version"].to_string().replace("\"", ""), 
             source: val["source"].to_string(), 
-            binaries: val["bin"].to_string().replace("\"", ""),
+            binaries: "".to_string(),
         });
     }
     Ok(())
