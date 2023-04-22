@@ -1,54 +1,74 @@
 use serde_json::{Result, Value};
 
-fn untyped_example() -> Result<()> {
-    // Some JSON input data as a &str. Maybe this comes from the user.
-    let data = r#"
-    {
-        "version": "5.17.2.534",
-        "description": "SUMo. Detecting and updating outdated software",
-        "homepage": "https://www.kcsoftwares.com/?sumo",
-        "license": {
-            "identifier": "Freeware",
-            "url": "http://www.kcsoftwares.com/legal/ToU.pdf"
-        },
-        "url": "https://www.kcsoftwares.com/files/sumo.zip",
-        "hash": "5c1768c9a1b9d5b6ade6a370895c46a2c79b3feab025b57ad586d838150f7306",
-        "extract_dir": "sumo",
-        "pre_install": "if (!(Test-Path \"$persist_dir\\settings.ini\")) { Set-Content \"$dir\\settings.ini\" '[Settings]', 'AutoUpdate=0' -Encoding Ascii }",
-        "bin": "SUMo.exe",
-        "shortcuts": [
-            [
-                "SUMo.exe",
-                "SUMo"
-            ]
-        ],
-        "persist": "settings.ini",
-        "checkver": {
-            "url": "https://www.kcsoftwares.com/?download",
-            "regex": "(?sm)SUMo</h.*?Version\\s+:\\s*<code>([\\d.]+)</"
-        },
-        "autoupdate": {
-            "url": "https://www.kcsoftwares.com/files/sumo.zip"
-        }
-    }"#;
+fn search_query(v: &mut Vec<Manifest>, query: &str) -> Result<()>{
+    let input_path: String = "C:\\Users\\Adrian\\scoop\\buckets\\Scoop-Apps\\bucket\\SUMo-Portable.json".to_string();
+    let text = std::fs::read_to_string(&input_path).unwrap();
+    let val: Value = serde_json::from_str(&text).unwrap();
 
-    // Parse the string of data into serde_json::Value.
-    let v: Value = serde_json::from_str(data)?;
-
-    // Access parts of the data by indexing with square brackets.
-    println!("Version: {}\nDescription: {}\nLicense: {}\nShortcuts: {}", v["version"], v["description"], v["license"]["identifier"], v["shortcuts"][0]);
-
+    if query == "" {
+        
+    } else {
+        v.push(Manifest {
+            name: val["name"].to_string(), 
+            version: val["version"].to_string().replace("\"", ""), 
+            source: val["source"].to_string(), 
+            binaries: val["bin"].to_string().replace("\"", ""),
+        });
+    }
     Ok(())
 }
 
-// fn print_if_contains_query(name: &str, bucket: &str, json: &str, query: &str) -> Result<()>{
-//     let v: Value = serde_json::from_str(json)?;
-//     if query != "" && v["description"].to_string().contains(query) {
-//         println!("{}\t{}\t{}", name, v["version"], bucket)
-//     }
-//     Ok(())
-// }
+#[derive(Debug)]
+struct Manifest {
+    name: String,
+    version: String,
+    source: String,
+    binaries: String,
+}
 
 fn main() {
-    untyped_example().unwrap();
+    let mut _name_count: u8 = 45;
+    let mut _version_count: u8 = 20;
+    let mut _source_count: u8  = 20;
+    let mut _binaries_count: u8 = 25;
+    let mut v: Vec<Manifest> = vec![];
+    let query: String = std::env::args().nth(0).unwrap();
+
+    
+    // let input_path: String = "C:\\Users\\Adrian\\scoop\\buckets\\Scoop-Apps\\bucket\\SUMo-Portable.json".to_string();
+    // let text = std::fs::read_to_string(&input_path).unwrap();
+    // let val: Value = serde_json::from_str(&text).unwrap();
+
+    // if query == "" {
+        
+    // } else {
+    //     v.push(Manifest {
+    //         name: val["name"].to_string(), 
+    //         version: val["version"].to_string().replace("\"", ""), 
+    //         source: val["source"].to_string(), 
+    //         binaries: val["bin"].to_string().replace("\"", ""),
+    //     });
+    // }
+
+    v.push(Manifest {
+        name: "Name".to_string(), 
+        version: "Version".to_string(), 
+        source: "Source".to_string(), 
+        binaries: "Binaries".to_string()
+    });
+
+    v.push(Manifest {
+        name: "----".to_string(), 
+        version: "-------".to_string(), 
+        source: "------".to_string(), 
+        binaries: "--------".to_string()
+    });
+
+    search_query(&mut v, &query).unwrap();
+
+    for m in &v {
+        println!("{: <45} {: <20} {: <20} {: <25}", m.name, m.version, m.source, m.binaries);
+    }
+    
+    // untyped_example().unwrap();
 }
