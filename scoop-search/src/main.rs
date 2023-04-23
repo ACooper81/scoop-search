@@ -10,14 +10,22 @@ struct Manifest {
 }
 
 fn main() -> Result<()> {
-    let mut _name_count: u8 = 45;
-    let mut _version_count: u8 = 20;
-    let mut _source_count: u8  = 20;
-    let mut _binaries_count: u8 = 25;
+    let name_count: usize = 45;
+    let version_count: usize = 20;
+    let source_count: usize  = 15;
+    let binaries_count: usize = 25;
     let mut v: Vec<Manifest> = vec![];
 
     let args: Vec<String> = env::args().collect();
     let query: String;
+
+    let help_message = "Usage: scoop search <query>\n\nSearches for apps that are available to install.\n\nIf used with [query], shows app names that match the query.\nWithout [query], shows all the available apps.";
+    if args.len() > 1 {
+        if args[1] == "-h" || args[1] == "--help" || args[1] == "/?" {
+            println!("{help_message}");
+            std::process::exit(exitcode::OK);
+        }
+    }
     match args.len() {
         1 => query = "".to_string().to_lowercase(),
         2 => query = args[1].parse().unwrap(),
@@ -54,7 +62,9 @@ fn main() -> Result<()> {
     // search_query(&mut v, &"C:/Users/Adrian/scoop/buckets/Scoop-Apps/bucket/SUMo-Portable.json".to_string(), &query).unwrap();
     print!("Results from local buckets...\n\n");
     for m in &v {
-        println!("{: <45} {: <20} {: <20} {: <25}", m.name, m.version, m.source, m.binaries);
+        println!("{: <width$} {: <width2$} {: <width3$} {: <width4$}"
+        , m.name, m.version, m.source, m.binaries
+        , width = name_count, width2 = version_count, width3 = source_count, width4 = binaries_count);
         // let stdin = io::stdin();
         // let mut user_input: String = "".to_string();
         // stdin.read_line(&mut user_input).unwrap();
@@ -84,23 +94,33 @@ fn search_query(v: &mut Vec<Manifest>, input_path: &String, query: &str) -> Resu
         }
         last_split_item = substring.to_string();
     }
+    let version_string = val["version"].to_string().replace("\"", "");
+
+    // if manifest_name.len() > name_count { name_count = manifest_name.len()}
     
     // let file_stem = path::Path::new(&input_path).file_stem().unwrap().to_str();
     // let file_name = &file_stem.expect("no file stem found").to_string();
     // println!("{}", &file_stem.expect("no file stem found").to_string());
     if query != "" {
         if manifest_name.to_lowercase().contains(query) || val["bin"].to_string().to_lowercase().contains(query) {
+            let mut binaries_string = val["bin"].to_string().replace("\"", "");
+            if binaries_string.len() > 45 {
+                binaries_string = binaries_string.chars().take(25).collect();
+                binaries_string = binaries_string + "...";
+            } else if binaries_string == "null".to_string() {
+                binaries_string = "".to_string();
+            }
             v.push(Manifest {
                 name: manifest_name,
-                version: val["version"].to_string().replace("\"", ""), 
+                version: version_string,
                 source: bucket, 
-                binaries: val["bin"].to_string().replace("\"", ""),
+                binaries: binaries_string,
             });
         }
     } else {
         v.push(Manifest {
             name: manifest_name, 
-            version: val["version"].to_string().replace("\"", ""), 
+            version: version_string, 
             source: bucket, 
             binaries: "".to_string(),
         });
