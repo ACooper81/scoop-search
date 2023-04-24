@@ -54,8 +54,8 @@ fn main() -> Result<()> {
         source: "------".to_string(), 
         binaries: "--------".to_string()
     });
-    // let buckets_path = env::home_dir().unwrap().display().to_string() + "\\scoop\\buckets\\";
-    let buckets_path = env::var("SCOOP").unwrap_or(env::home_dir().unwrap().display().to_string() + "\\scoop") + "\\buckets\\";
+    // println!("{}", env::var("USERPROFILE").unwrap() + "\\scoop\\buckets\\");
+    let buckets_path = env::var("SCOOP").unwrap_or(env::var("USERPROFILE").unwrap() + "\\scoop") + "\\buckets\\";
     let buckets = fs::read_dir(buckets_path).unwrap();
 
     for path in buckets {
@@ -64,8 +64,11 @@ fn main() -> Result<()> {
         for manifest in manifest_paths {
             let path = manifest.unwrap().path().display().to_string();
             // println!("Buckets: {}", path);
-            search_query(&mut v, &path, &query).unwrap();
+            if path.contains(".json") {
+                search_query(&mut v, &path, &query).unwrap();
+            }
         }
+        // break;
     }
 
     for m in &mut v {
@@ -101,6 +104,9 @@ fn main() -> Result<()> {
 
 fn search_query(v: &mut Vec<Manifest>, input_path: &String, query: &str) -> Result<()>{
     // let input_path: String = "C:/Users/Adrian/scoop/buckets/Scoop-Apps/bucket/SUMo-Portable.json".to_string();
+    if input_path.contains(query) == false {
+        return Ok(())
+    }
     let text = fs::read_to_string(&input_path).unwrap();
     let val: Value = serde_json::from_str(&text).unwrap();
 
