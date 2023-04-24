@@ -1,5 +1,7 @@
 use serde_json::{Result, Value};
-use std::{fs, env, io};
+use std::{fs, env};
+extern crate termsize;
+
 
 #[derive(Debug)]
 struct Manifest {
@@ -10,11 +12,18 @@ struct Manifest {
 }
 
 fn main() -> Result<()> {
-    let name_count: usize = 45;
-    let version_count: usize = 20;
-    let source_count: usize  = 15;
-    let binaries_count: usize = 25;
+    let mut name_count: usize = 4;
+    let mut version_count: usize = 7;
+    let mut source_count: usize  = 6;
+    let mut binaries_count: usize = 8;
+    let mut terminal_width: usize = 0;
     let mut v: Vec<Manifest> = vec![];
+
+    termsize::get().map(|size| {
+        // println!("rows {} cols {}", size.rows, size.cols);
+        terminal_width = size.cols as usize;
+    });
+    
 
     let args: Vec<String> = env::args().collect();
     let query: String;
@@ -45,8 +54,8 @@ fn main() -> Result<()> {
         source: "------".to_string(), 
         binaries: "--------".to_string()
     });
-
-    let buckets_path = env::home_dir().unwrap().display().to_string() + "\\scoop\\buckets\\";
+    // let buckets_path = env::home_dir().unwrap().display().to_string() + "\\scoop\\buckets\\";
+    let buckets_path = env::var("SCOOP").unwrap_or(env::home_dir().unwrap().display().to_string() + "\\scoop") + "\\buckets\\";
     let buckets = fs::read_dir(buckets_path).unwrap();
 
     for path in buckets {
@@ -59,18 +68,33 @@ fn main() -> Result<()> {
         }
     }
 
-    // search_query(&mut v, &"C:/Users/Adrian/scoop/buckets/Scoop-Apps/bucket/SUMo-Portable.json".to_string(), &query).unwrap();
+    for m in &mut v {
+        if m.name.len() > name_count {
+            name_count = m.name.len();
+        }
+        if m.version.len() > version_count {
+            version_count = m.version.len();
+        }
+        if m.source.len() > source_count {
+            source_count = m.source.len();
+        }
+        if m.binaries.len() > binaries_count {
+            let widths = name_count + version_count + source_count + 30;
+            binaries_count = terminal_width - widths;
+        }
+        // println!("{} {}",terminal_width, binaries_count);
+    }
+
     print!("Results from local buckets...\n\n");
-    for m in &v {
+    for m in &mut v {
+        if m.binaries.len() > binaries_count {
+            let string: String = m.binaries.chars().take(binaries_count - 3).collect();
+            m.binaries = string + "...";
+        }
         println!("{: <width$} {: <width2$} {: <width3$} {: <width4$}"
         , m.name, m.version, m.source, m.binaries
         , width = name_count, width2 = version_count, width3 = source_count, width4 = binaries_count);
-        // let stdin = io::stdin();
-        // let mut user_input: String = "".to_string();
-        // stdin.read_line(&mut user_input).unwrap();
     }
-
-    // println!("{}", query);
 
     Ok(())
 }
@@ -94,22 +118,25 @@ fn search_query(v: &mut Vec<Manifest>, input_path: &String, query: &str) -> Resu
         }
         last_split_item = substring.to_string();
     }
-    let version_string = val["version"].to_string().replace("\"", "");
 
-    // if manifest_name.len() > name_count { name_count = manifest_name.len()}
-    
-    // let file_stem = path::Path::new(&input_path).file_stem().unwrap().to_str();
-    // let file_name = &file_stem.expect("no file stem found").to_string();
-    // println!("{}", &file_stem.expect("no file stem found").to_string());
+    let version_string = val["version"].to_string().replace("\"", "");
     if query != "" {
         if manifest_name.to_lowercase().contains(query) || val["bin"].to_string().to_lowercase().contains(query) {
             let mut binaries_string = val["bin"].to_string().replace("\"", "");
-            if binaries_string.len() > 45 {
-                binaries_string = binaries_string.chars().take(25).collect();
-                binaries_string = binaries_string + "...";
-            } else if binaries_string == "null".to_string() {
+            if binaries_string == "null".to_string() {
                 binaries_string = "".to_string();
             }
+            if binaries_string.contains("[") {
+                binaries_string = binaries_string.replace("[", "").replace("]", "").replace(",", " | ");
+            }
+            
+            // binaries_string = "".to_string();
+            // for item in binaries_list {
+            //     if item.contains('.') {
+                    
+            //         binaries_string = binaries_string + item;
+            //     }
+            // }
             v.push(Manifest {
                 name: manifest_name,
                 version: version_string,
