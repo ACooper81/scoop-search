@@ -79,7 +79,7 @@ fn main() -> Result<()> {
             source_count = m.source.len();
         }
         if m.binaries.len() > binaries_count {
-            let widths = name_count + version_count + source_count + 30;
+            let widths = name_count + version_count + source_count + 25;
             binaries_count = terminal_width - widths;
         }
         // println!("{} {}",terminal_width, binaries_count);
