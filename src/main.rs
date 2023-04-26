@@ -1,4 +1,5 @@
-use serde_json::{Result, Value};
+// use serde_json::{Result, Value};
+// use serde_json::{Result};
 use std::{fs, env};
 extern crate termsize;
 
@@ -11,7 +12,8 @@ struct Manifest {
     binaries: String,
 }
 
-fn main() -> Result<()> {
+// fn main() -> Result<()> {
+fn main() -> () {
     let mut name_count: usize = 4;
     let mut version_count: usize = 7;
     let mut source_count: usize  = 6;
@@ -63,9 +65,9 @@ fn main() -> Result<()> {
         let manifest_paths = fs::read_dir(manifest_path).unwrap();
         for manifest in manifest_paths {
             let path = manifest.unwrap().path().display().to_string();
-            // println!("Buckets: {}", path);
             if path.contains(".json") {
-                search_query(&mut v, &path, &query).unwrap();
+                // search_query(&mut v, &path, &query).unwrap();
+                search_query(&mut v, &path, &query);
             }
         }
         // break;
@@ -85,32 +87,35 @@ fn main() -> Result<()> {
             let widths = name_count + version_count + source_count + 25;
             binaries_count = terminal_width - widths;
         }
-        // println!("{} {}",terminal_width, binaries_count);
     }
 
+    let mut result_string = "".to_string();
     print!("Results from local buckets...\n\n");
     for m in &mut v {
         if m.binaries.len() > binaries_count {
             let string: String = m.binaries.chars().take(binaries_count - 3).collect();
             m.binaries = string + "...";
         }
-        println!("{: <width$} {: <width2$} {: <width3$} {: <width4$}"
+        // println!("{: <width$} {: <width2$} {: <width3$} {: <width4$}"
+        // , m.name, m.version, m.source, m.binaries
+        // , width = name_count, width2 = version_count, width3 = source_count, width4 = binaries_count);
+        result_string = result_string + &format!("{: <width$} {: <width2$} {: <width3$} {: <width4$}\n"
         , m.name, m.version, m.source, m.binaries
-        , width = name_count, width2 = version_count, width3 = source_count, width4 = binaries_count);
+        , width = name_count, width2 = version_count, width3 = source_count, width4 = binaries_count).to_string();
     }
+    print!("{}", result_string);
 
-    Ok(())
+    // Ok(())
 }
 
-fn search_query(v: &mut Vec<Manifest>, input_path: &String, query: &str) -> Result<()>{
-    // let input_path: String = "C:/Users/Adrian/scoop/buckets/Scoop-Apps/bucket/SUMo-Portable.json".to_string();
-    if input_path.contains(query) == false {
-        return Ok(())
+fn search_query(v: &mut Vec<Manifest>, input_path: &String, query: &str) -> (){
+    // let text = fs::read_to_string(&input_path).unwrap();
+    // let val: Value = serde_json::from_str(&text).unwrap();
+    let binding = fs::read_to_string(&input_path).unwrap();
+    let json = binding.as_str();
+    if !gjson::valid(json) {
+        return;
     }
-    let text = fs::read_to_string(&input_path).unwrap();
-    let val: Value = serde_json::from_str(&text).unwrap();
-
-    // let _path_split = input_path.split('/');
     let mut manifest_name = "".to_string();
     let mut bucket = "".to_string();
 
@@ -125,38 +130,38 @@ fn search_query(v: &mut Vec<Manifest>, input_path: &String, query: &str) -> Resu
         last_split_item = substring.to_string();
     }
 
-    let version_string = val["version"].to_string().replace("\"", "");
+    // let version_string = val["version"].to_string().replace("\"", "");
+    let version_string = gjson::get(json, "version");
     if query != "" {
-        if manifest_name.to_lowercase().contains(query) || val["bin"].to_string().to_lowercase().contains(query) {
-            let mut binaries_string = val["bin"].to_string().replace("\"", "");
-            if binaries_string == "null".to_string() {
-                binaries_string = "".to_string();
-            }
+        // if manifest_name.to_lowercase().contains(query) || val["bin"].to_string().to_lowercase().contains(query) {
+        if manifest_name.to_lowercase().contains(query) || gjson::get(json, "bin").to_string().to_lowercase().contains(query) {
+            // let mut binaries_string = val["bin"].to_string().replace("\"", "");
+            let mut binaries_string = gjson::get(json, "bin|@ugly").to_string();
+            let mut binaries_list: String = "".to_string();
             if binaries_string.contains("[") {
-                binaries_string = binaries_string.replace("[", "").replace("]", "").replace(",", " | ");
+                binaries_string = binaries_string.replace("[", "").replace("]", "").replace(",", "|").replace("\"", "");
+                let binaries_split = binaries_string.split("|");
+                for item in binaries_split {
+                    if item.contains(query) {
+                        binaries_list = binaries_list + item + " | ";
+                    }
+                }
+                binaries_list = binaries_list.trim_end_matches(" | ").to_string();
             }
-            
-            // binaries_string = "".to_string();
-            // for item in binaries_list {
-            //     if item.contains('.') {
-                    
-            //         binaries_string = binaries_string + item;
-            //     }
-            // }
             v.push(Manifest {
                 name: manifest_name,
-                version: version_string,
+                version: version_string.to_string(),
                 source: bucket, 
-                binaries: binaries_string,
+                binaries: binaries_list,
             });
         }
     } else {
         v.push(Manifest {
             name: manifest_name, 
-            version: version_string, 
+            version: version_string.to_string(), 
             source: bucket, 
             binaries: "".to_string(),
         });
     }
-    Ok(())
+    // Ok(())
 }
