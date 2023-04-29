@@ -58,8 +58,20 @@ fn main() -> () {
     });
     // println!("{}", env::var("USERPROFILE").unwrap() + "\\scoop\\buckets\\");
     let buckets_path = env::var("SCOOP").unwrap_or(env::var("USERPROFILE").unwrap() + "\\scoop") + "\\buckets\\";
-    let buckets = fs::read_dir(buckets_path).unwrap();
+    let _buckets_root = fs::read_dir(&buckets_path).unwrap();
+    let buckets = fs::read_dir(&buckets_path).unwrap();
 
+    // for path in buckets_root {
+    //     let manifest_path = path.unwrap().path().display().to_string();
+    //     let manifest_paths = fs::read_dir(manifest_path).unwrap();
+    //     for manifest in manifest_paths {
+    //         let path = manifest.unwrap().path().display().to_string();
+    //         if path.contains(".json") {
+    //             // search_query(&mut v, &path, &query).unwrap();
+    //             search_query(&mut v, &path, &query);
+    //         }
+    //     }
+    // }
     for path in buckets {
         let manifest_path = path.unwrap().path().display().to_string() + "\\bucket";
         let manifest_paths = fs::read_dir(manifest_path).unwrap();
@@ -70,7 +82,6 @@ fn main() -> () {
                 search_query(&mut v, &path, &query);
             }
         }
-        // break;
     }
 
     for m in &mut v {
@@ -99,9 +110,9 @@ fn main() -> () {
         // println!("{: <width$} {: <width2$} {: <width3$} {: <width4$}"
         // , m.name, m.version, m.source, m.binaries
         // , width = name_count, width2 = version_count, width3 = source_count, width4 = binaries_count);
-        result_string = result_string + &format!("{: <width$} {: <width2$} {: <width3$} {: <width4$}\n"
+        result_string = result_string + &format!("{: <width$} {: <width2$} {: <width3$} {}\n"
         , m.name, m.version, m.source, m.binaries
-        , width = name_count, width2 = version_count, width3 = source_count, width4 = binaries_count).to_string();
+        , width = name_count, width2 = version_count, width3 = source_count).to_string();
     }
     print!("{}", result_string);
 
@@ -132,6 +143,12 @@ fn search_query(v: &mut Vec<Manifest>, input_path: &String, query: &str) -> (){
 
     // let version_string = val["version"].to_string().replace("\"", "");
     let version_string = gjson::get(json, "version");
+    let description_string = gjson::get(json, "description");
+    let homepage_string = gjson::get(json, "homepage");
+    if homepage_string.to_string() == "".to_string() || description_string.to_string() == "".to_string() || version_string.to_string() == "".to_string() {
+        return
+    }
+
     if query != "" {
         // if manifest_name.to_lowercase().contains(query) || val["bin"].to_string().to_lowercase().contains(query) {
         if manifest_name.to_lowercase().contains(query) || gjson::get(json, "bin").to_string().to_lowercase().contains(query) {
