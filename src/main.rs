@@ -22,10 +22,8 @@ fn main() -> () {
     let mut v: Vec<Manifest> = vec![];
 
     termsize::get().map(|size| {
-        // println!("rows {} cols {}", size.rows, size.cols);
         terminal_width = size.cols as usize;
     });
-    
 
     let args: Vec<String> = env::args().collect();
     let query: String;
